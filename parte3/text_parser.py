@@ -4,7 +4,7 @@
 #Description: semplice parser basato su pattern matching
 
 from textblob import TextBlob
-import re
+from fuzzywuzzy import fuzz
 
 #"Do you like ice-cream?"  -> "VBP,PRP,IN,NN"
 #Can you tell me about something?" -> "MD,PRP,VB,PRP,IN,NN"
@@ -22,20 +22,42 @@ import re
 #NN     -> ICECREAM | PEN | BOOK.
 
 
+
+
+
 import CFG
 
 cfg1 = CFG.CFG()
-cfg1.add_prod('S', 'NP VP')
-cfg1.add_prod('NP', 'Det N | Det N')
-cfg1.add_prod('NP', 'I | he | she | Joe')
-cfg1.add_prod('VP', 'V NP | VP')
-cfg1.add_prod('Det', 'a | the | my | his')
-cfg1.add_prod('N', 'elephant | cat | jeans | suit')
-cfg1.add_prod('V', 'kicked | followed | shot')
+cfg1.add_prod('S', 'AUXV NP MAINV OBJ| WHW BE_VERB OBJ |WHW ABOUT OBJ')
+cfg1.add_prod('NP', 'YOU')
+cfg1.add_prod('NP', 'I')
+cfg1.add_prod('AUXV', 'DO | CAN')
+cfg1.add_prod('DET', 'THE | A')
+cfg1.add_prod('BE_VERB', 'IS | ARE')
+cfg1.add_prod('MAINV', 'BE_VERB | THINK | LIKE |FIND | SEARCH |HAVE | TELL')
+cfg1.add_prod('WHW', 'WHAT | WHERE | WHEN')
+cfg1.add_prod('OBJ', 'CC NN| DET NN | DET NN CC OBJ')
+cfg1.add_prod('CC', 'ABOUT | OF')
+cfg1.add_prod('NN', 'ICECREAM | PEN | BOOK')
 
-for i in range(10):
-	print (cfg1.gen_random('S'))
 
+
+def get_best_syntax_three(text):
+
+    blob = TextBlob(text)
+    ph_list = []
+    #trova i token genera le regole semplificate
+
+    #Genera un set di frasi 
+    for i in range(50): 
+        ph_list.append(cfg1.gen_random_convergent('S'))
+    
+    for ph in ph_list:
+        print(ph + str(fuzz.ratio(ph,blob.upper())))
+    
+    
+
+get_best_syntax_three("WHERE ABOUT A PEN ABOUT A BOOK")
 
 phrases = [
 		"Can you tell me about something?",
@@ -48,24 +70,6 @@ phrases = [
 	]
 
 
-for ph in phrases:
-	blob = TextBlob(ph)
-	blob.upper()
-
-	tag_string = ""
-	for tag in blob.tags:
-		tag_string += tag[1] + ",";
-	tag_string = tag_string[0:-1]
-	print(str(blob.tags) +tag_string)
 
 
 
-
-
-prog = re.compile(r"WP,VBP,PRP,VB,IN,NN")
-result = prog.match(tag_string)
-
-if(result):
-	print("True")
-else:
-	print("False")	
