@@ -10,8 +10,8 @@ def weighted_choice(weights):
 
 
 class CFG(object):
-    def __init__(self):
-        self.prod = defaultdict(list)
+    def __init__(self, grammar = defaultdict(list)):
+        self.prod = grammar.copy()
 
     def add_prod(self, lhs, rhs):
         """ Add production to the grammar. 'rhs' can
@@ -27,24 +27,69 @@ class CFG(object):
         for prod in prods:
             self.prod[lhs].append(tuple(prod.split()))
 
-    def gen_random(self, symbol):
+    def prune(self, terminal_list, level = 5):
+        done = False
+        l = 0
+        while not done and l < level:
+            done = True
+            non_terminal = []
+            for lhs in self.prod:
+                non_terminal.append(lhs)
+                
+            for lhs in self.prod:
+                new_rule = []
+                for rhs in  self.prod[lhs]:
+                    exclude = False
+                    for el in rhs:
+                        #print(":::  -> "+el,terminal_list,el in terminal_list)
+                        if (not (el in terminal_list)) and (not (el in non_terminal)):
+                            exclude = True
+                            done = False
+                            break
+                    if not exclude:
+                        new_rule.append(rhs)
+                        
+                self.prod[lhs] = new_rule
+            
+            #recreate the dictionary without empty rules
+            new_prod = defaultdict(list)
+            for lhs in self.prod:
+                if len(self.prod[lhs]) !=0:
+                    new_prod[lhs] = self.prod[lhs]
+                    
+            self.prod = new_prod
+            l+=1
+        
+    def print_grammar(self):
+        for lhs in self.prod:
+            outstr = "{:s} ->".format(lhs)
+            for rhs in  self.prod[lhs]:
+                for el in rhs:
+                    outstr += el+ " " 
+                outstr += " | "
+            print(outstr)
+    
+    def gen_random(self, symbol ):
         """ Generate a random sentence from the
             grammar, starting with the given
             symbol.
         """
         sentence = ''
-
+        root =[]
         # select one production of this symbol randomly
         rand_prod = random.choice(self.prod[symbol])
 
         for sym in rand_prod:
             # for non-terminals, recurse
             if sym in self.prod:
-                sentence += self.gen_random(sym)
+                sent,node = self.gen_random(sym)
+                sentence += sent
+                root.append(node)
             else:
                 sentence += sym + ' '
+                root.append(sym)
 
-        return sentence
+        return sentence, root
 
 
     def gen_random_convergent(self,
@@ -69,7 +114,7 @@ class CFG(object):
           branch.
       """
       sentence = ''
-
+      root = []
       # The possible productions of this symbol are weighted
       # by their appearance in the branch that has led to this
       # symbol in the derivation
@@ -96,13 +141,18 @@ class CFG(object):
       for sym in rand_prod:
           # for non-terminals, recurse
           if sym in self.prod:
-              sentence += self.gen_random_convergent(
+              sent,node = self.gen_random_convergent(
                                   sym,
                                   cfactor=cfactor,
                                   pcount=pcount)
+              sentence += sent
+              root.append((sym,node))
+                    
           else:
               sentence += sym + ' '
+              root.append((sym,))
+
 
       # backtracking: clear the modification to pcount
       pcount[rand_prod] -= 1
-      return sentence
+      return sentence, root

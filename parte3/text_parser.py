@@ -37,37 +37,45 @@ cfg1.add_prod('BE_VERB', 'IS | ARE')
 cfg1.add_prod('MAINV', 'BE_VERB | THINK | LIKE |FIND | SEARCH |HAVE | TELL')
 cfg1.add_prod('WHW', 'WHAT | WHERE | WHEN')
 cfg1.add_prod('OBJ', 'CC NN| DET NN | DET NN CC OBJ')
-cfg1.add_prod('CC', 'ABOUT | OF')
+cfg1.add_prod('CC', ' OF')
 cfg1.add_prod('NN', 'ICECREAM | PEN | BOOK')
 
 
-
-def get_best_syntax_three(text):
-
+def get_best_syntax_three(text, cfg):
+    
     blob = TextBlob(text)
     ph_list = []
     #trova i token genera le regole semplificate
-
+    cfg.print_grammar()
+    print()
+    cfg_copy = CFG.CFG(cfg.prod)
+    cfg_copy.prune(blob.upper().words,1)
+    cfg_copy.print_grammar()
+    print()
     #Genera un set di frasi 
-    for i in range(50): 
-        ph_list.append(cfg1.gen_random_convergent('S'))
+    for i in range(10): 
+        sent,tree = cfg_copy.gen_random_convergent('S')
+        ph_list.append(sent)
     
+    print(ph_list)
     for ph in ph_list:
         print(ph + str(fuzz.ratio(ph,blob.upper())))
     
-    
+# sent,tree = cfg1.gen_random_convergent('S')
+# print()
 
-get_best_syntax_three("WHERE ABOUT A PEN ABOUT A BOOK")
+# print(sent)
 
-phrases = [
-		"Can you tell me about something?",
-		"What do you think about something?",
-		"What is the purpose of your trip?",
-		"Where is my book?",
-		"where is your pencil?",
-		"where is the pen?",
-		"Do you like ice-cream?"
-	]
+
+# cfg1.prune(sent.split())
+
+# cfg1.print_grammar()
+# print()
+
+# sent,tree = cfg1.gen_random_convergent('S')
+# print(sent)
+get_best_syntax_three("DO YOU LIKE  ICECREAM",cfg1)
+
 
 
 
