@@ -105,7 +105,7 @@ def greatings(name):
 def search_for_info(something_to_search):
     str_v =  ["I googled for " + str(something_to_search)]
     str_v.append("I found this: .... ")
-    str_v.append("but I'm not smart enough to understand what it is, sorry")
+    str_v.append("but I'm not smart enough to understand, sorry")
     return str_v
 
 def ask_for_info(something_unknown):
@@ -117,32 +117,50 @@ def approve_res(state):
     else:
         return ["no"]
     
-def you_want_to_know():
-    return ["You want to know"]
+def Prephrases(phr):
+    return [phr]
 
     
 def parse_tree(tree):
-    #trova il tipodi frase e chiama la successiva funzione
+    #trova il tipo di frase e chiama la successiva funzione
     PH= "."
     for p in tree["Tree"]:
         PH += p[0]+"."
     print (PH)
     actions = []
     if PH == ".WHW.BE_VERB.OBJ.":
-         parse_WHW_BE_VERB_OBJ(tree["Tree"],actions)
+        parse_WHW_BE_VERB_OBJ(tree["Tree"],actions)
+    elif PH== ".WHW.ABOUT.OBJ.":
+        parse_WHW_ABOUT_OBJ(tree["Tree"],actions)
+    elif PH== ".AUXV.NP.MAINV.OBJ.":
+        parse_AUXV_NP_MAINV_OBJ(tree["Tree"],action)
     else:
-        actions.append(partial(ask_for_info,something_to_search=tree["S"]))
+        action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
 
     return actions
     
 def  parse_WHW_BE_VERB_OBJ(tree, action):
     if tree[0][1][0][0] == "WHAT":
-        action.append(partial(you_want_to_know))
+        action.append(partial(Prephrases, phr=("so you want to know what " + str(tree[2][1][1]) + " is")))
+        action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
+
+    elif tree[0][1][0][0] == "WHERE":
+        action.append(partial(Prephrases, phr=("so you want to know where " + str(tree[2][1][1]) + " is")))
         action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
 
     else:
         action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
 
+def  parse_WHW_ABOUT_OBJ(tree, action):
+    if tree[0][1][0][0] == "WHAT":
+        action.append(partial(Prephrases, phr=("so you want to know something about: " + str(tree[2][1][1]))))
+        action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
+    else:
+        action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
+
+
+def parse_AUXV_NP_MAINV_OBJ  (tree, action):      
+    action.append(partial(Prephrases, phr="good question but I can't answer."))
 
 best_ph = get_best_syntax_three("what is a cat",cfg1)
 
