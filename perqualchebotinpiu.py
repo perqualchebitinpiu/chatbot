@@ -8,14 +8,52 @@ from fuzzywuzzy import fuzz
 from textblob.classifiers import NaiveBayesClassifier
 from functools import partial
 import telepot
-
 import time
 import CFG
 
 offset = 0
 
-#532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no
-TOKEN = "532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no"
+#classifier
+cl = NaiveBayesClassifier(train, feature_extractor = chatbot_extractor)   
+
+#definiamo il nostro classificatore personalizzato
+def chatbot_extractor(document):
+
+    blob = TextBlob(document)	
+    words = blob.upper().words 
+    #print(words)
+    feat = {}
+    #question
+    feat ["contain(WHERE)"]  = "WHERE"  in  words
+    feat ["contain(WHAT)"]   = "WHAT"  	in  words
+    feat ["contain(HOW)"]    = "HOW"  	in  words
+    feat ["contain(WHICH)"]  = "WHICH"  in  words
+    #punteggiatura
+    feat ["contain(?)"] 	 = "?"  	in  words
+    feat ["contain(.)"] 	 = "."  	in  words
+    #command
+    feat ["contain(DO)"] 	 = "DO"  in  words
+    feat ["contain(FIND)"] 	 = "FIND"  in  words
+    feat ["contain(GET)"]    = "GET"  in  words
+    feat ["contain(TELL)"] 	 = "TELL"  in  words
+    feat ["contain(SEARCH)"] = "SEARCH"  in  words
+    #approval
+    feat ["contain(YES)"]    = "YES"  in  words
+    feat ["contain(NO)"] 	 = "NO"  in  words
+    feat ["contain(OK)"] 	 = "OK"  in  words
+    feat ["contain(GOOD)"]   = "GOOD"  in  words
+    #saluti
+    feat ["contain(HELLO)"]  = "HELLO"  in  words
+    feat ["contain(HI)"] 	 = "HI"  in  words
+    feat ["contain(BYE)"] 	 = "BYE"  in  words
+    feat ["contain(HEY)"] 	 = "HEY"  in  words
+    #statements
+    feat ["contain(THINK)"]  = "THINK"  in  words
+    feat ["contain(LIKE)"] 	 = "LIKE"  in  words
+    feat ["contain(FEEL)"]   = "FEEL"  in  words
+
+    return feat        
+
 
 #classifier
 train = [
@@ -37,46 +75,57 @@ train = [
 	("you think like a bot", 'statement')
     ]
 
-#definiamo il nostro classificatore personalizzato
-def chatbot_extractor(document):
 
-	blob = TextBlob(document)	
-	words = blob.upper().words 
-	#print(words)
-	feat = {}
-	#question
-	feat ["contain(WHERE)"]  = "WHERE"  in  words
-	feat ["contain(WHAT)"]   = "WHAT"  	in  words
-	feat ["contain(HOW)"]    = "HOW"  	in  words
-	feat ["contain(WHICH)"]  = "WHICH"  in  words
-	#punteggiatura
-	feat ["contain(?)"] 	 = "?"  	in  words
-	feat ["contain(.)"] 	 = "."  	in  words
-	#command
-	feat ["contain(DO)"] 	 = "DO"  in  words
-	feat ["contain(FIND)"] 	 = "FIND"  in  words
-	feat ["contain(GET)"]    = "GET"  in  words
-	feat ["contain(TELL)"] 	 = "TELL"  in  words
-	feat ["contain(SEARCH)"] = "SEARCH"  in  words
-	#approval
-	feat ["contain(YES)"]    = "YES"  in  words
-	feat ["contain(NO)"] 	 = "NO"  in  words
-	feat ["contain(OK)"] 	 = "OK"  in  words
-	feat ["contain(GOOD)"]   = "GOOD"  in  words
-	#saluti
-	feat ["contain(HELLO)"]  = "HELLO"  in  words
-	feat ["contain(HI)"] 	 = "HI"  in  words
-	feat ["contain(BYE)"] 	 = "BYE"  in  words
-	feat ["contain(HEY)"] 	 = "HEY"  in  words
-	#statements
-	feat ["contain(THINK)"]  = "THINK"  in  words
-	feat ["contain(LIKE)"] 	 = "LIKE"  in  words
-	feat ["contain(FEEL)"]   = "FEEL"  in  words
 
-	return feat
 
-cl = NaiveBayesClassifier(train, feature_extractor= chatbot_extractor)   
+# grammar è la grammatiche che usa il bot per
+# analizzare le frasi e per comporle
+class Perqualchebotinpiu:
 
+    def init(self, type_classifier, grammar):
+        self.myname =  "Perqualchebotinpiu"
+        #532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no
+        self.TOKEN = "532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no"
+        #type of word classifier
+        self.tcl = type_classifier
+        self.grammar  = grammar
+        
+        bot_handle = telepot.Bot(TOKEN)
+        print(bot_handle.getMe())
+
+    def think(self, content,sender_id,sender_name):
+        
+        # Analizza le frasi che sono arrivate
+        sentences = self.stage1(content,sender_id,sender_name)
+        
+        # Genera una possibile lista di risposte (una risposta puo contenere piu frasi)
+        ans_list  = self.stage2(sender_id,sender_name,sentences) 
+        
+        # Analizza le risposte in base alle frasi alle risposte e alla memoria del bot
+        # ritorna quell migliore
+        best_ans = self.stage3(sender_name, sentences, ans_list,  bot_memory)
+        
+        return best_ans
+        
+    def stage1(self, content,sender_id,sender_name):
+    
+        blob = TextBlob(content)
+        
+        sentences = []
+        #estrai dalle frasi delle features
+        for sentence in blob.sentences:
+            sentence = str(sentence)            
+            #1) trova la categoria 
+            category = cl.classify(sentence)
+            #2) genera il sintax tree
+            best_ph = get_best_syntax_three(sentence,question_grammar)
+            
+            sentences.append ({"sentence":sentence, "category": category, ""})
+            
+        return  sentences 
+
+        
+        
 
 #definizioni delle grammatiche
 question_grammar = CFG.CFG()
@@ -92,8 +141,7 @@ question_grammar.add_prod('OBJ', 'CC NN| DET NN | DET NN CC OBJ')
 question_grammar.add_prod('CC', ' OF')
 question_grammar.add_prod('NN', 'ICECREAM | PEN | BOOK')
 
-bot = telepot.Bot(TOKEN)
-print(bot.getMe())
+
 
 
 def get_best_syntax_three(text, cfg):
