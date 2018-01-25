@@ -13,8 +13,10 @@ import CFG
 
 offset = 0
 
-#classifier
-cl = NaiveBayesClassifier(train, feature_extractor = chatbot_extractor)   
+ 
+
+#532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no
+TELEGRAM_TOKEN = "532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no"
 
 #definiamo il nostro classificatore personalizzato
 def chatbot_extractor(document):
@@ -74,73 +76,24 @@ train = [
 	("I feel better", 'statement'),
 	("you think like a bot", 'statement')
     ]
+#classifier
+cl = NaiveBayesClassifier(train, feature_extractor = chatbot_extractor)  
 
 
-
-
-# grammar è la grammatiche che usa il bot per
-# analizzare le frasi e per comporle
-class Perqualchebotinpiu:
-
-    def init(self, type_classifier, grammar):
-        self.myname =  "Perqualchebotinpiu"
-        #532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no
-        self.TOKEN = "532223263:AAGvEJdfAwMX-W0VYsFWAVAhaZqnjtOB0no"
-        #type of word classifier
-        self.tcl = type_classifier
-        self.grammar  = grammar
-        
-        bot_handle = telepot.Bot(TOKEN)
-        print(bot_handle.getMe())
-
-    def think(self, content,sender_id,sender_name):
-        
-        # Analizza le frasi che sono arrivate
-        sentences = self.stage1(content,sender_id,sender_name)
-        
-        # Genera una possibile lista di risposte (una risposta puo contenere piu frasi)
-        ans_list  = self.stage2(sender_id,sender_name,sentences) 
-        
-        # Analizza le risposte in base alle frasi alle risposte e alla memoria del bot
-        # ritorna quell migliore
-        best_ans = self.stage3(sender_name, sentences, ans_list,  bot_memory)
-        
-        return best_ans
-        
-    def stage1(self, content,sender_id,sender_name):
-    
-        blob = TextBlob(content)
-        
-        sentences = []
-        #estrai dalle frasi delle features
-        for sentence in blob.sentences:
-            sentence = str(sentence)            
-            #1) trova la categoria 
-            category = cl.classify(sentence)
-            #2) genera il sintax tree
-            best_ph = get_best_syntax_three(sentence,question_grammar)
-            
-            sentences.append ({"sentence":sentence, "category": category, ""})
-            
-        return  sentences 
-
-        
-        
 
 #definizioni delle grammatiche
-question_grammar = CFG.CFG()
-question_grammar.add_prod('S', 'AUXV NP MAINV OBJ| WHW BE_VERB OBJ |WHW ABOUT OBJ')
-question_grammar.add_prod('NP', 'YOU')
-question_grammar.add_prod('NP', 'I')
-question_grammar.add_prod('AUXV', 'DO | CAN')
-question_grammar.add_prod('DET', 'THE | A')
-question_grammar.add_prod('BE_VERB', 'IS | ARE')
-question_grammar.add_prod('MAINV', 'BE_VERB | THINK | LIKE |FIND | SEARCH |HAVE | TELL |KNOW')
-question_grammar.add_prod('WHW', 'WHAT | WHERE | WHEN')
-question_grammar.add_prod('OBJ', 'CC NN| DET NN | DET NN CC OBJ')
-question_grammar.add_prod('CC', ' OF')
-question_grammar.add_prod('NN', 'ICECREAM | PEN | BOOK')
-
+grammar = CFG.CFG()
+grammar.add_prod('S', 'AUXV NP MAINV OBJ| WHW BE_VERB OBJ |WHW ABOUT OBJ')
+grammar.add_prod('NP', 'YOU')
+grammar.add_prod('NP', 'I')
+grammar.add_prod('AUXV', 'DO | CAN')
+grammar.add_prod('DET', 'THE | A')
+grammar.add_prod('BE_VERB', 'IS | ARE')
+grammar.add_prod('MAINV', 'BE_VERB | THINK | LIKE |FIND | SEARCH |HAVE | TELL |KNOW')
+grammar.add_prod('WHW', 'WHAT | WHERE | WHEN')
+grammar.add_prod('OBJ', 'CC NN| DET NN | DET NN CC OBJ')
+grammar.add_prod('CC', ' OF')
+grammar.add_prod('NN', 'ICECREAM | PEN | BOOK')
 
 
 
@@ -175,134 +128,130 @@ def get_best_syntax_three(text, cfg):
             best_ph  =  ph
     
     #print(best_ph)
-    return best_ph
-
-
+    return best_ph    
     
-def greatings(name):
-    if (name): 
-        return ["hello: " + name]
-    else:
-        return ["hello"]
+
+
+# grammar è la grammatiche che usa il bot per
+# analizzare le frasi e per comporle
+class Perqualchebotinpiu:
+
+    def init(self, type_classifier, grammar):
+        self.myname =  "Perqualchebotinpiu"
+
+        #type of word classifier
+        self.tcl = type_classifier
+        self.grammar  = grammar
         
 
-def search_for_info(something_to_search):
-    str_v =  ["I googled for " + str(something_to_search)]
-    str_v.append("I found this: .... ")
-    str_v.append("but I'm not smart enough to understand, sorry")
-    return str_v
 
-def ask_for_info(something_unknown):
-    return ["I have  very limited vocabulary, I do not understand " + str(something_unknown)]
+    #bot actions
+    def greatings(self, name):
+        if (name): 
+            return ["hello: " + name]
+        else:
+            return ["hello"]
 
-def approve_res(state):
-    if state:
-        return ["yes"]
-    else:
-        return ["no"]
+
+    def search_for_info(self, something_to_search):
+        str_v =  ["I googled for " + str(something_to_search)]
+        str_v.append("I found this: .... ")
+        str_v.append("but I'm not smart enough to understand, sorry")
+        return str_v
+
+    def ask_for_info(self, something_unknown):
+        return ["I have  very limited vocabulary, I do not understand " + str(something_unknown)]
+
+    def approve_res(self, state):
+        if state:
+            return ["yes"]
+        else:
+            return ["no"]
+        
+    def emit_phrase(self, phr):
+        return [phr]
+
+            
+        
+    def think(self, content,sender_id,sender_name):
+        
+        # Analizza le frasi che sono arrivate
+        sentences = self.stage1(content,sender_id,sender_name)
+        
+        # Genera una possibile lista di risposte (una risposta puo contenere piu frasi)
+        actions_list = self.stage2(sender_id,sender_name,sentences) 
+        
+        # Analizza le risposte in base alle frasi alle risposte e alla memoria del bot
+        # ritorna quell migliore
+        best_ans = self.stage3(sender_name, sentences, actions_list)
+        
+        return best_ans
+        
+    def stage1(self, content,sender_id,sender_name):
     
-def Prephrases(phr):
-    return [phr]
+        blob = TextBlob(content)
+        
+        sentences = []
+        #estrai dalle frasi delle features
+        for sentence in blob.sentences:
+            sentence = str(sentence)            
+            #1) trova la categoria 
+            category = cl.classify(sentence)
+            #2) genera il sintax tree
+            best_syntax_tree = get_best_syntax_tree(sentence,question_grammar)
 
+            
+            sentences.append ({"sentence":sentence, "category": category, "syntax_tree":best_syntax_tree})
+            
+        return  sentences 
     
-def parse_tree(tree):
-    #trova il tipo di frase e chiama la successiva funzione
-    PH= "."
-    for p in tree["Tree"]:
-        PH += p[0]+"."
-    print (PH)
-    actions = []
-    if PH == ".WHW.BE_VERB.OBJ.":
-        parse_WHW_BE_VERB_OBJ(tree["Tree"],actions)
-    elif PH== ".WHW.ABOUT.OBJ.":
-        parse_WHW_ABOUT_OBJ(tree["Tree"],actions)
-    elif PH== ".AUXV.NP.MAINV.OBJ.":
-        parse_AUXV_NP_MAINV_OBJ(tree["Tree"],action)
-    else:
-        action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
-
-    return actions
+    def resolve_unknown(self, s):
+        pass
     
-def  parse_WHW_BE_VERB_OBJ(tree, action):
-    if tree[0][1][0][0] == "WHAT":
-        action.append(partial(Prephrases, phr=("so you want to know what " + str(tree[2][1][1]) + " is")))
-        action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
-
-    elif tree[0][1][0][0] == "WHERE":
-        action.append(partial(Prephrases, phr=("so you want to know where " + str(tree[2][1][1]) + " is")))
-        action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
-
-    else:
-        action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
-
-def  parse_WHW_ABOUT_OBJ(tree, action):
-    if tree[0][1][0][0] == "WHAT":
-        action.append(partial(Prephrases, phr=("so you want to know something about: " + str(tree[2][1][1]))))
-        action.append(partial(search_for_info,something_to_search=tree[2][1][1]))
-    else:
-        action.append(partial(ask_for_info,something_to_search=tree[2][1][1]))
-
-
-def parse_AUXV_NP_MAINV_OBJ  (tree, action):      
-    action.append(partial(Prephrases, phr="good question but I can't answer."))
+    def stage2(self, sender_id,sender_name,sentences):
+        for s in sentences:
+            #3) resolve unknown
+            self.resolve_unknown(s)
+        
+        
+        actions  = []
+        actions.append(partial(self.ask_for_info,something_to_search = "object to search"))
+        actions.append(partial(self.greatings,   name = sender_name))
+        actions.append(partial(self.emit_phrase, phr = "good question but I can't answer."))
+        
+        return actions
     
-#Each of these functions perform the corresponding action
-
-def do_greatings(sentence,sender_id,sender_name):
-    res = ["hello, {:s}".format(sender_name)] 
-    return res
     
-def do_command(sentence,sender_id,sender_name):
-    res = ["I don't feel like doing anythink!"]
-    return res
+    def stage3(self, sender_name, sentences, actions_list):
+        
+        best_actions = actions_list[0]
+        best_score = -1;
+        best_res = []
+        
+        for actions in actions_list:            
+        
+            res = []
+            for a in actions:
+                res += a()
+            
+            score = self.eval_actions(res)
+        
+            if score > best_score:
+                best_score = score 
+                best_actions = actions
+                best_res = res
+                
+        return best_res
+        
+        
+bot_handle = telepot.Bot(TELEGRAM_TOKEN)
+print(bot_handle.getMe())
+ 
 
-
-def do_question(sentence,sender_id,sender_name):
-    best_ph = get_best_syntax_three(sentence,question_grammar)
-
-    actions = parse_tree(best_ph)
-
-    res = []
-    for a in actions:
-        res += a()
-    return res
-
-def do_statement(sentence,sender_id,sender_name):
-    res = ["Ok, I don't have any memory!"]
-    return res
-
-
-def do_formula(sentence,sender_id,sender_name):
-    res = ["I can't do computation"]
-    return res
-
-def think(content,sender_id,sender_name):
-    blob = TextBlob(content)
-
-    ret =[]
-    for sentence in blob.sentences:
-        sentence = str(sentence)
-        #1) first do text categorization
-        category = cl.classify(sentence)
-        print(category)
-        #2) perform the corresponding action
-        if category == "command":
-            res = do_command(sentence,sender_id,sender_name)
-        elif category == "question":
-            res = do_question(sentence,sender_id,sender_name)
-        elif category == "statement":
-            res = do_statement(sentence,sender_id,sender_name)
-        elif category == "formula":
-            res = do_formula(sentence,sender_id,sender_name)  
-        elif category == "greeting":
-            res = do_greatings(sentence,sender_id,sender_name)  
-        ret = res
-
-    return ret
-
-
-while(True):
-    resp = bot.getUpdates(offset)
+while(True):   
+    bot = Perqualchebotinpiu(cl, grammar)
+    
+    resp = bot_handle.getUpdates(offset)
     #gestisci tutti gli aggiornamenti
     for r in resp:
         print(r)
@@ -313,11 +262,11 @@ while(True):
             if("text" in r["message"]):
                 content = r["message"]["text"]
 
-                ret = think(content,sender_id,sender_name)
+                ret = bot.think(content,sender_id,sender_name)
                 for m in ret:
-                    bot.sendMessage(sender_id,m)
+                    bot_handle.sendMessage(sender_id,m)
             else:
-                bot.sendMessage(sender_id, "sorry,{:s} I can only read text messages!".format(sender_name))              
+                bot_handle.sendMessage(sender_id, "sorry,{:s} I can only read text messages!".format(sender_name))              
 
 
 
