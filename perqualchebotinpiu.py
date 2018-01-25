@@ -97,7 +97,7 @@ grammar.add_prod('NN', 'ICECREAM | PEN | BOOK')
 
 
 
-def get_best_syntax_three(text, cfg):
+def get_best_syntax_tree(text, cfg):
     
     blob = TextBlob(text)
     ph_list = []
@@ -136,7 +136,7 @@ def get_best_syntax_three(text, cfg):
 # analizzare le frasi e per comporle
 class Perqualchebotinpiu:
 
-    def init(self, type_classifier, grammar):
+    def __init__(self, type_classifier, grammar):
         self.myname =  "Perqualchebotinpiu"
 
         #type of word classifier
@@ -198,7 +198,7 @@ class Perqualchebotinpiu:
             #1) trova la categoria 
             category = cl.classify(sentence)
             #2) genera il sintax tree
-            best_syntax_tree = get_best_syntax_tree(sentence,question_grammar)
+            best_syntax_tree = get_best_syntax_tree(sentence,self.grammar)
 
             
             sentences.append ({"sentence":sentence, "category": category, "syntax_tree":best_syntax_tree})
@@ -211,16 +211,22 @@ class Perqualchebotinpiu:
     def stage2(self, sender_id,sender_name,sentences):
         for s in sentences:
             #3) resolve unknown
-            self.resolve_unknown(s)
+            self.resolve_unknown(s)        
         
+        actions_list  = []        
         
-        actions  = []
-        actions.append(partial(self.ask_for_info,something_to_search = "object to search"))
-        actions.append(partial(self.greatings,   name = sender_name))
-        actions.append(partial(self.emit_phrase, phr = "good question but I can't answer."))
+        for i in range (3):
+            actions = []
+            actions.append(partial(self.ask_for_info,something_unknown = "object to search"))
+            actions.append(partial(self.greatings,   name = sender_name))
+            actions.append(partial(self.emit_phrase, phr = "good question but I can't answer."))
+            actions_list.append(actions) 
         
-        return actions
+        return actions_list
     
+    
+    def eval_actions(self, res):
+        return 1.0
     
     def stage3(self, sender_name, sentences, actions_list):
         
